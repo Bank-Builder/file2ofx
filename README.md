@@ -38,6 +38,33 @@ file2ofx bankfile.txt --format csv --encoding utf-8
 file2ofx --help
 ```
 
+### Tab Completion
+
+The CLI supports tab completion for file and output paths:
+
+```bash
+# Enable completion for bash
+eval "$(_FILE2OFX_COMPLETE=bash_source file2ofx)"
+
+# Enable completion for zsh
+eval "$(_FILE2OFX_COMPLETE=zsh_source file2ofx)"
+
+# Enable completion for fish
+eval "$(_FILE2OFX_COMPLETE=fish_source file2ofx)"
+```
+
+Or install the completion script:
+
+```bash
+file2ofx completion > ~/.local/share/bash-completion/completions/file2ofx
+```
+
+**Features:**
+- **Input files**: Tab completion for CSV and TXT files only
+- **Output files**: Tab completion for existing .ofx files and suggests new .ofx files
+- **Directory navigation**: Tab completion works with directories
+- **Relative paths**: Supports both relative and absolute paths
+
 ## Input File Formats
 
 ### CSV Files
