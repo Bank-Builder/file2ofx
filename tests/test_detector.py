@@ -33,8 +33,8 @@ class TestColumnDetector:
         assert detected["Value"] == "amount"
         assert detected["Sum"] == "amount"
         assert detected["Total"] == "amount"
-        assert detected["Debit"] == "amount"
-        assert detected["Credit"] == "amount"
+        assert detected["Debit"] == "debit"
+        assert detected["Credit"] == "credit"
 
     def test_detect_from_headers_description(self):
         """Test detection of description columns from headers."""
@@ -228,9 +228,9 @@ class TestColumnDetector:
         required = self.detector.get_required_columns()
 
         assert "date" in required
-        assert "amount" in required
         assert "description" in required
-        assert len(required) == 3
+        # Note: amount is no longer always required since we support separate debit/credit columns
+        assert len(required) == 2
 
     def test_validate_detected_columns_valid(self):
         """Test validation of detected columns with all required."""
