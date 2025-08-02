@@ -249,6 +249,11 @@ class OFXGenerator:
         if "date" in transaction:
             dt_posted.text = self._format_ofx_date(transaction["date"])
 
+        # Add DTUSER (same as DTPOSTED)
+        dt_user = etree.SubElement(stmt_trn, "DTUSER")
+        if "date" in transaction:
+            dt_user.text = self._format_ofx_date(transaction["date"])
+
         # Add transaction amount
         trn_amt = etree.SubElement(stmt_trn, "TRNAMT")
         
