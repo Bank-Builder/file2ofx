@@ -1,6 +1,5 @@
 """Integration tests for file2ofx."""
 
-
 import pytest
 from file2ofx.core.ofx_generator import OFXGenerator
 from file2ofx.core.parser import FileParser
