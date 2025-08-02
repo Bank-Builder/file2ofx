@@ -19,8 +19,6 @@ class OFXGenerator:
         self.account_id = None
         self.account_type = "CHECKING"
         self.currency = "USD"
-        self.ledger_balance = None
-        self.available_balance = None
 
     def generate_ofx(
         self,
@@ -32,8 +30,6 @@ class OFXGenerator:
         account_id: Optional[str] = None,
         account_type: str = "CHECKING",
         currency: str = "USD",
-        ledger_balance: Optional[float] = None,
-        available_balance: Optional[float] = None,
     ) -> None:
         """Generate OFX file from transaction data.
         
@@ -46,8 +42,6 @@ class OFXGenerator:
             account_id: Account ID
             account_type: Account type (default: "CHECKING")
             currency: Currency code (default: "USD")
-            ledger_balance: Ledger balance amount
-            available_balance: Available balance amount
             
         Raises:
             ValueError: If transactions are invalid or generation fails
@@ -63,8 +57,6 @@ class OFXGenerator:
             self.account_id = account_id
             self.account_type = account_type
             self.currency = currency
-            self.ledger_balance = ledger_balance
-            self.available_balance = available_balance
 
             # Create OFX document structure
             ofx_root = self._create_ofx_structure()
@@ -235,9 +227,6 @@ class OFXGenerator:
         for transaction in transactions:
             self._add_transaction_to_list(bank_tran_list, transaction)
 
-        # Add balance information
-        self._add_balance_sections(stmt_rs)
-
     def _add_transaction_to_list(
         self,
         bank_tran_list: etree.Element,
@@ -260,11 +249,6 @@ class OFXGenerator:
         if "date" in transaction:
             dt_posted.text = self._format_ofx_date(transaction["date"])
 
-        # Add user date (same as posted date)
-        dt_user = etree.SubElement(stmt_trn, "DTUSER")
-        if "date" in transaction:
-            dt_user.text = self._format_ofx_date(transaction["date"])
-
         # Add transaction amount
         trn_amt = etree.SubElement(stmt_trn, "TRNAMT")
         if "amount" in transaction:
@@ -273,42 +257,26 @@ class OFXGenerator:
 
         # Add transaction ID
         fit_id = etree.SubElement(stmt_trn, "FITID")
+        # Generate a proper transaction ID (8 digits like the working file)
+        import hashlib
         if "date" in transaction and "amount" in transaction:
-            # Create a unique transaction ID
-            date_part = self._format_ofx_date(transaction["date"])
-            amount_part = self._normalize_amount(transaction["amount"])
-            fit_id.text = f"{date_part}_{amount_part}"
+            # Create a hash-based ID similar to the working file format
+            content = f"{transaction['date']}_{transaction['amount']}"
+            if "description" in transaction:
+                content += f"_{transaction['description']}"
+            hash_obj = hashlib.md5(content.encode())
+            # Take first 8 characters of hash and convert to decimal
+            hash_hex = hash_obj.hexdigest()[:8]
+            fit_id.text = str(int(hash_hex, 16))[:8].zfill(8)
         else:
-            fit_id.text = "0"
+            fit_id.text = "00000000"
 
         # Add memo/description
         if "description" in transaction:
             name = etree.SubElement(stmt_trn, "NAME")
             name.text = self._sanitize_text(transaction["description"])
 
-    def _add_balance_sections(self, stmt_rs: etree.Element) -> None:
-        """Add balance sections to OFX document.
-        
-        Args:
-            stmt_rs: STMTRS element
-        """
-        current_time = datetime.now().strftime("%Y%m%d%H%M%S")
-        
-        # Add LEDGERBAL if provided
-        if self.ledger_balance is not None:
-            ledger_bal = etree.SubElement(stmt_rs, "LEDGERBAL")
-            bal_amt = etree.SubElement(ledger_bal, "BALAMT")
-            bal_amt.text = f"{self.ledger_balance:.2f}"
-            dt_asof = etree.SubElement(ledger_bal, "DTASOF")
-            dt_asof.text = current_time
-        
-        # Add AVAILBAL if provided
-        if self.available_balance is not None:
-            avail_bal = etree.SubElement(stmt_rs, "AVAILBAL")
-            bal_amt = etree.SubElement(avail_bal, "BALAMT")
-            bal_amt.text = f"{self.available_balance:.2f}"
-            dt_asof = etree.SubElement(avail_bal, "DTASOF")
-            dt_asof.text = current_time
+
 
     def _determine_transaction_type(self, transaction: Dict[str, str]) -> str:
         """Determine OFX transaction type from transaction data.
@@ -526,20 +494,50 @@ class OFXGenerator:
         return sanitized
 
     def _write_ofx_file(self, ofx_root: etree.Element, output_path: Path) -> None:
-        """Write OFX document to file.
+        """Write OFX file in SGML format (not XML).
         
         Args:
             ofx_root: OFX root element
             output_path: Path to output file
         """
-        # Create XML tree
-        tree = etree.ElementTree(ofx_root)
+        try:
+            with open(output_path, 'w', encoding='utf-8') as f:
+                # Write SGML header (not XML)
+                f.write("OFXHEADER:100\n")
+                f.write("DATA:OFXSGML\n")
+                f.write(f"VERSION:{self.ofx_version}\n")
+                f.write("SECURITY:NONE\n")
+                f.write("ENCODING:UTF-8\n")
+                f.write("CHARSET:CSUNICODE\n")
+                f.write("COMPRESSION:NONE\n")
+                f.write("OLDFILEUID:NONE\n")
+                f.write("NEWFILEUID:NONE\n\n")
+                
+                # Write SGML content without closing tags
+                f.write("<OFX>\n")
+                self._write_sgml_element(f, ofx_root, indent=2)
+                f.write("</OFX>\n")
+                
+        except Exception as e:
+            raise ValueError(f"Error writing OFX file: {e}")
 
-        # Write to file with proper formatting
-        with open(output_path, "wb") as f:
-            tree.write(
-                f,
-                encoding="utf-8",
-                xml_declaration=True,
-                pretty_print=True,
-            )
+    def _write_sgml_element(self, f, element, indent=0):
+        """Write SGML element without closing tags.
+        
+        Args:
+            f: File object
+            element: XML element
+            indent: Indentation level
+        """
+        spaces = "  " * indent
+        
+        for child in element:
+            if child.tag in ["OFXHEADER", "DATA", "VERSION", "SECURITY", "ENCODING", "CHARSET", "COMPRESSION", "OLDFILEUID", "NEWFILEUID"]:
+                # Skip these as they're handled in the header
+                continue
+                
+            if child.text and child.text.strip():
+                f.write(f"{spaces}<{child.tag}>{child.text}\n")
+            else:
+                f.write(f"{spaces}<{child.tag}>\n")
+                self._write_sgml_element(f, child, indent + 1)

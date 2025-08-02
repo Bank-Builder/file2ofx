@@ -185,16 +185,7 @@ def complete_output_path(ctx: click.Context, param: click.Parameter, incomplete:
     default="USD",
     help="Currency code (default: USD)",
 )
-@click.option(
-    "--ledger-balance",
-    type=float,
-    help="Ledger balance amount",
-)
-@click.option(
-    "--available-balance",
-    type=float,
-    help="Available balance amount",
-)
+
 def main(
     file: Path,
     format: str,
@@ -207,8 +198,6 @@ def main(
     account_id: Optional[str],
     account_type: str,
     currency: str,
-    ledger_balance: Optional[float],
-    available_balance: Optional[float],
 ) -> None:
     """Convert transaction files to OFX format.
     
@@ -241,8 +230,6 @@ def main(
             account_id=account_id,
             account_type=account_type,
             currency=currency,
-            ledger_balance=ledger_balance,
-            available_balance=available_balance,
         )
 
         click.echo(f"Successfully converted {file} to {output}")
