@@ -223,9 +223,12 @@ class OFXGenerator:
             end_date = self._get_latest_date(transactions)
             dt_end.text = self._format_ofx_date(end_date)
 
-        # Add transactions
-        for transaction in transactions:
-            self._add_transaction_to_list(bank_tran_list, transaction)
+                    # Add transactions
+            for transaction in transactions:
+                self._add_transaction_to_list(bank_tran_list, transaction)
+
+            # Add balance sections (required for proper OFX structure)
+            self._add_balance_sections(stmt_rs)
 
     def _add_transaction_to_list(
         self,
@@ -336,6 +339,26 @@ class OFXGenerator:
         if "description" in transaction:
             name = etree.SubElement(stmt_trn, "NAME")
             name.text = self._sanitize_text(transaction["description"])
+
+    def _add_balance_sections(self, stmt_rs: etree.Element) -> None:
+        """Add balance sections to OFX document.
+        
+        Args:
+            stmt_rs: STMTRS element
+        """
+        # Add LEDGERBAL section
+        ledger_bal = etree.SubElement(stmt_rs, "LEDGERBAL")
+        bal_amt = etree.SubElement(ledger_bal, "BALAMT")
+        bal_amt.text = "0.00"  # Default balance
+        dt_asof = etree.SubElement(ledger_bal, "DTASOF")
+        dt_asof.text = datetime.now().strftime("%Y%m%d%H%M%S")
+
+        # Add AVAILBAL section
+        avail_bal = etree.SubElement(stmt_rs, "AVAILBAL")
+        bal_amt = etree.SubElement(avail_bal, "BALAMT")
+        bal_amt.text = "0.00"  # Default balance
+        dt_asof = etree.SubElement(avail_bal, "DTASOF")
+        dt_asof.text = datetime.now().strftime("%Y%m%d%H%M%S")
 
 
 
@@ -598,7 +621,7 @@ class OFXGenerator:
                 
                 # Write SGML content without closing tags
                 f.write("<OFX>\n")
-                self._write_sgml_element(f, ofx_root, indent=2)
+                self._write_sgml_element(f, ofx_root, indent=1)
                 f.write("</OFX>\n")
                 
         except Exception as e:
@@ -612,7 +635,7 @@ class OFXGenerator:
             element: XML element
             indent: Indentation level
         """
-        spaces = "  " * indent
+        spaces = "  " * indent  # Use 2-space indentation like working example
         
         for child in element:
             if child.tag in ["OFXHEADER", "DATA", "VERSION", "SECURITY", "ENCODING", "CHARSET", "COMPRESSION", "OLDFILEUID", "NEWFILEUID"]:
