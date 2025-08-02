@@ -1,0 +1,98 @@
+# file2ofx Project Rules
+
+## Project Overview
+This is a Python CLI application that converts transaction files (TXT/CSV) to OFX format with auto-column detection.
+
+## Code Style & Quality
+- Follow PEP 8 guidelines
+- Use type hints for all function signatures
+- Write docstrings for all modules, classes, and functions
+- Maximum line length: 88 characters (ruff formatter default)
+- Use meaningful variable and function names
+- Use ruff for linting (not black)
+
+## Project Structure
+```
+file2ofx/
+├── src/file2ofx/          # Main package
+│   ├── __init__.py
+│   ├── cli.py             # CLI entry point
+│   ├── core/              # Core functionality
+│   │   ├── __init__.py
+│   │   ├── detector.py    # Column detection logic
+│   │   ├── parser.py      # File parsing
+│   │   └── ofx_generator.py # OFX generation
+│   └── utils/             # Utility functions
+│       ├── __init__.py
+│       └── file_utils.py  # File handling utilities
+├── tests/                 # Test files
+├── scripts/               # Test data generation scripts
+├── pyproject.toml         # Project configuration
+├── README.md             # Project documentation
+└── .gitignore           # Git ignore file
+```
+
+## Development Practices
+- Use virtual environments (.venv/ not venv/)
+- Keep pyproject.toml updated
+- Write tests for new features (pytest preferred)
+- Implement proper error handling and logging
+- Use environment variables for configuration
+
+## Git Workflow
+- Commit frequently between changes
+- Only push when instructed
+- Use meaningful commit messages
+- Test code before committing
+
+## Testing
+- Write unit tests for all modules
+- Use pytest for testing
+- Aim for good test coverage
+- Test both success and error cases
+
+## CLI Requirements
+- Main command: `file2ofx [FILE] --options`
+- Include --help option
+- Support basic file conversion
+- Auto-detect file format
+- Generate .ofx output files
+- Handle file naming conflicts
+
+## Key Features to Implement
+1. Auto-column detection from headers or data analysis
+2. Support for .cols files for column definitions
+3. CSV and TXT file parsing
+4. OFX 2.x compliant output generation
+5. Smart file naming with conflict resolution
+6. Multiple output file naming (filename_1.ofx, filename_2.ofx, etc.)
+
+## Dependencies
+- click: CLI framework
+- pandas: Data manipulation
+- lxml: XML generation for OFX
+
+## Error Handling
+- Graceful handling of malformed input files
+- Clear error messages for users
+- Proper validation of input data
+- Handle missing or invalid column definitions
+
+## Performance
+- Efficient file parsing
+- Memory-conscious processing for large files
+- Fast column detection algorithms
+
+## Security
+- Validate all input files
+- Sanitize data before OFX generation
+- Handle file paths safely
+- Prevent path traversal attacks
+
+## Documentation
+- Clear docstrings for all functions
+- Type hints for better IDE support
+- README with usage examples
+- Inline comments for complex logic
+
+Remember: Keep changes small and focused, test frequently, and maintain code quality throughout development. 
