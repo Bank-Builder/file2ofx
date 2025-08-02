@@ -251,17 +251,73 @@ class OFXGenerator:
 
         # Add transaction amount
         trn_amt = etree.SubElement(stmt_trn, "TRNAMT")
-        if "amount" in transaction:
-            amount = self._normalize_amount(transaction["amount"])
-            trn_amt.text = amount
+        
+        # Handle separate debit and credit columns
+        debit_amount = transaction.get("debit", "0")
+        credit_amount = transaction.get("credit", "0")
+        
+        # Clean and convert amounts
+        debit_clean = re.sub(r"[$€£¥₹₽₿,]", "", debit_amount)
+        credit_clean = re.sub(r"[$€£¥₹₽₿,]", "", credit_amount)
+        
+        try:
+            debit_float = float(debit_clean) if debit_clean else 0.0
+            credit_float = float(credit_clean) if credit_clean else 0.0
+            
+            # Use the non-zero amount
+            if debit_float > 0:
+                amount = self._normalize_amount(debit_amount)
+                trn_amt.text = amount
+            elif credit_float > 0:
+                amount = self._normalize_amount(credit_amount)
+                trn_amt.text = amount
+            else:
+                # Fallback to single amount field
+                if "amount" in transaction:
+                    amount = self._normalize_amount(transaction["amount"])
+                    trn_amt.text = amount
+                else:
+                    trn_amt.text = "0.00"
+        except ValueError:
+            # Fallback to single amount field
+            if "amount" in transaction:
+                amount = self._normalize_amount(transaction["amount"])
+                trn_amt.text = amount
+            else:
+                trn_amt.text = "0.00"
 
         # Add transaction ID
         fit_id = etree.SubElement(stmt_trn, "FITID")
         # Generate a proper transaction ID (8 digits like the working file)
         import hashlib
-        if "date" in transaction and "amount" in transaction:
+        
+        # Get the amount for ID generation
+        amount_for_id = "0"
+        debit_amount = transaction.get("debit", "0")
+        credit_amount = transaction.get("credit", "0")
+        
+        # Clean and convert amounts
+        debit_clean = re.sub(r"[$€£¥₹₽₿,]", "", debit_amount)
+        credit_clean = re.sub(r"[$€£¥₹₽₿,]", "", credit_amount)
+        
+        try:
+            debit_float = float(debit_clean) if debit_clean else 0.0
+            credit_float = float(credit_clean) if credit_clean else 0.0
+            
+            # Use the non-zero amount
+            if debit_float > 0:
+                amount_for_id = debit_amount
+            elif credit_float > 0:
+                amount_for_id = credit_amount
+            elif "amount" in transaction:
+                amount_for_id = transaction["amount"]
+        except ValueError:
+            if "amount" in transaction:
+                amount_for_id = transaction["amount"]
+        
+        if "date" in transaction:
             # Create a hash-based ID similar to the working file format
-            content = f"{transaction['date']}_{transaction['amount']}"
+            content = f"{transaction['date']}_{amount_for_id}"
             if "description" in transaction:
                 content += f"_{transaction['description']}"
             hash_obj = hashlib.md5(content.encode())
@@ -308,7 +364,28 @@ class OFXGenerator:
             if trans_type in type_mapping:
                 return type_mapping[trans_type]
 
-        # Try to determine from amount
+        # Check for separate debit and credit columns
+        debit_amount = transaction.get("debit", "0")
+        credit_amount = transaction.get("credit", "0")
+        
+        # Clean and convert amounts
+        debit_clean = re.sub(r"[$€£¥₹₽₿,]", "", debit_amount)
+        credit_clean = re.sub(r"[$€£¥₹₽₿,]", "", credit_amount)
+        
+        try:
+            debit_float = float(debit_clean) if debit_clean else 0.0
+            credit_float = float(credit_clean) if credit_clean else 0.0
+            
+            # If debit amount is greater than 0, it's a DEBIT
+            if debit_float > 0:
+                return "DEBIT"
+            # If credit amount is greater than 0, it's a CREDIT
+            elif credit_float > 0:
+                return "CREDIT"
+        except ValueError:
+            pass
+
+        # Try to determine from single amount field
         if "amount" in transaction:
             amount = transaction["amount"]
             # Remove currency symbols and convert to float

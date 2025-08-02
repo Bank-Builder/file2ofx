@@ -24,9 +24,15 @@ class ColumnDetector:
         r"value",
         r"sum",
         r"total",
-        r"debit",
-        r"credit",
         r"balance",
+    ]
+
+    DEBIT_PATTERNS = [
+        r"^debit$",
+    ]
+
+    CREDIT_PATTERNS = [
+        r"^credit$",
     ]
 
     DESCRIPTION_PATTERNS = [
@@ -80,6 +86,16 @@ class ColumnDetector:
             # Check for date columns
             if self._matches_patterns(header_lower, self.DATE_PATTERNS):
                 detected[header] = "date"
+                continue
+
+            # Check for debit columns
+            if self._matches_patterns(header_lower, self.DEBIT_PATTERNS):
+                detected[header] = "debit"
+                continue
+
+            # Check for credit columns
+            if self._matches_patterns(header_lower, self.CREDIT_PATTERNS):
+                detected[header] = "credit"
                 continue
 
             # Check for amount columns
@@ -356,7 +372,7 @@ class ColumnDetector:
         Returns:
             List of required column types
         """
-        return ["date", "amount", "description"]
+        return ["date", "description"]
 
     def validate_detected_columns(self, detected: Dict[str, str]) -> Tuple[bool, List[str]]:
         """Validate that required columns are detected.
@@ -371,6 +387,15 @@ class ColumnDetector:
         detected_types = set(detected.values())
 
         missing = [col for col in required if col not in detected_types]
+        
+        # Check that we have either separate debit/credit columns or a single amount column
+        has_debit = "debit" in detected_types
+        has_credit = "credit" in detected_types
+        has_amount = "amount" in detected_types
+
+        if not has_debit and not has_credit and not has_amount:
+            missing.append("amount")
+
         is_valid = len(missing) == 0
 
         return is_valid, missing
