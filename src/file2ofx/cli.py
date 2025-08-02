@@ -156,12 +156,59 @@ def complete_output_path(ctx: click.Context, param: click.Parameter, incomplete:
     is_flag=True,
     help="Enable verbose output",
 )
+@click.option(
+    "--ofx-version",
+    type=click.Choice(["102", "103", "200", "201", "202", "203", "210", "211", "220"]),
+    default="102",
+    help="OFX version (default: 102 for OFX 1.0.2)",
+)
+@click.option(
+    "--fi-org",
+    help="Financial institution organization name",
+)
+@click.option(
+    "--fi-id",
+    help="Financial institution ID",
+)
+@click.option(
+    "--account-id",
+    help="Account ID",
+)
+@click.option(
+    "--account-type",
+    type=click.Choice(["CHECKING", "SAVINGS", "MONEYMRKT", "CREDITLINE"]),
+    default="CHECKING",
+    help="Account type (default: CHECKING)",
+)
+@click.option(
+    "--currency",
+    default="USD",
+    help="Currency code (default: USD)",
+)
+@click.option(
+    "--ledger-balance",
+    type=float,
+    help="Ledger balance amount",
+)
+@click.option(
+    "--available-balance",
+    type=float,
+    help="Available balance amount",
+)
 def main(
     file: Path,
     format: str,
     encoding: str,
     output: Optional[Path],
     verbose: bool,
+    ofx_version: str,
+    fi_org: Optional[str],
+    fi_id: Optional[str],
+    account_id: Optional[str],
+    account_type: str,
+    currency: str,
+    ledger_balance: Optional[float],
+    available_balance: Optional[float],
 ) -> None:
     """Convert transaction files to OFX format.
     
@@ -185,7 +232,18 @@ def main(
 
         # Generate OFX file
         generator = OFXGenerator()
-        generator.generate_ofx(transactions, output)
+        generator.generate_ofx(
+            transactions, 
+            output,
+            ofx_version=ofx_version,
+            fi_org=fi_org,
+            fi_id=fi_id,
+            account_id=account_id,
+            account_type=account_type,
+            currency=currency,
+            ledger_balance=ledger_balance,
+            available_balance=available_balance,
+        )
 
         click.echo(f"Successfully converted {file} to {output}")
 

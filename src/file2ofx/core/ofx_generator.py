@@ -13,19 +13,41 @@ class OFXGenerator:
 
     def __init__(self) -> None:
         """Initialize the OFX generator."""
-        self.ofx_version = "2.2"
-        self.financial_institution = "GENERIC"
+        self.ofx_version = "102"
+        self.fi_org = None
+        self.fi_id = None
+        self.account_id = None
+        self.account_type = "CHECKING"
+        self.currency = "USD"
+        self.ledger_balance = None
+        self.available_balance = None
 
     def generate_ofx(
         self,
         transactions: List[Dict[str, str]],
         output_path: Path,
+        ofx_version: str = "102",
+        fi_org: Optional[str] = None,
+        fi_id: Optional[str] = None,
+        account_id: Optional[str] = None,
+        account_type: str = "CHECKING",
+        currency: str = "USD",
+        ledger_balance: Optional[float] = None,
+        available_balance: Optional[float] = None,
     ) -> None:
         """Generate OFX file from transaction data.
         
         Args:
             transactions: List of transaction dictionaries
             output_path: Path to output OFX file
+            ofx_version: OFX version (default: "102")
+            fi_org: Financial institution organization name
+            fi_id: Financial institution ID
+            account_id: Account ID
+            account_type: Account type (default: "CHECKING")
+            currency: Currency code (default: "USD")
+            ledger_balance: Ledger balance amount
+            available_balance: Available balance amount
             
         Raises:
             ValueError: If transactions are invalid or generation fails
@@ -34,6 +56,16 @@ class OFXGenerator:
             raise ValueError("No transactions to convert")
 
         try:
+            # Store configuration
+            self.ofx_version = ofx_version
+            self.fi_org = fi_org
+            self.fi_id = fi_id
+            self.account_id = account_id
+            self.account_type = account_type
+            self.currency = currency
+            self.ledger_balance = ledger_balance
+            self.available_balance = available_balance
+
             # Create OFX document structure
             ofx_root = self._create_ofx_structure()
 
@@ -73,11 +105,11 @@ class OFXGenerator:
 
         # Add encoding
         encoding = etree.SubElement(ofx_root, "ENCODING")
-        encoding.text = "USASCII"
+        encoding.text = "UTF-8"
 
         # Add charset
         charset = etree.SubElement(ofx_root, "CHARSET")
-        charset.text = "1252"
+        charset.text = "CSUNICODE"
 
         # Add compression
         compression = etree.SubElement(ofx_root, "COMPRESSION")
@@ -91,7 +123,55 @@ class OFXGenerator:
         new_file_uid = etree.SubElement(ofx_root, "NEWFILEUID")
         new_file_uid.text = "NONE"
 
+        # Add SIGNONMSGSRSV1 section
+        self._add_signon_section(ofx_root)
+
         return ofx_root
+
+    def _add_signon_section(self, ofx_root: etree.Element) -> None:
+        """Add SIGNONMSGSRSV1 section to OFX document.
+        
+        Args:
+            ofx_root: OFX root element
+        """
+        # Create SIGNONMSGSRSV1 element
+        signon_msgs = etree.SubElement(ofx_root, "SIGNONMSGSRSV1")
+        
+        # Create SONRS element
+        son_rs = etree.SubElement(signon_msgs, "SONRS")
+        
+        # Add STATUS
+        status = etree.SubElement(son_rs, "STATUS")
+        code = etree.SubElement(status, "CODE")
+        code.text = "0"
+        severity = etree.SubElement(status, "SEVERITY")
+        severity.text = "INFO"
+        
+        # Add DTSERVER (current timestamp)
+        dt_server = etree.SubElement(son_rs, "DTSERVER")
+        dt_server.text = datetime.now().strftime("%Y%m%d%H%M%S")
+        
+        # Add LANGUAGE
+        language = etree.SubElement(son_rs, "LANGUAGE")
+        language.text = "ENG"
+        
+        # Add DTPROFUP (same as DTSERVER)
+        dt_prof_up = etree.SubElement(son_rs, "DTPROFUP")
+        dt_prof_up.text = dt_server.text
+        
+        # Add DTACCTUP (same as DTSERVER)
+        dt_acct_up = etree.SubElement(son_rs, "DTACCTUP")
+        dt_acct_up.text = dt_server.text
+        
+        # Add FI (Financial Institution) if provided
+        if self.fi_org or self.fi_id:
+            fi = etree.SubElement(son_rs, "FI")
+            if self.fi_org:
+                org = etree.SubElement(fi, "ORG")
+                org.text = self.fi_org
+            if self.fi_id:
+                fid = etree.SubElement(fi, "FID")
+                fid.text = self.fi_id
 
     def _add_transactions_to_ofx(
         self,
@@ -126,16 +206,16 @@ class OFXGenerator:
 
         # Add CURDEF
         cur_def = etree.SubElement(stmt_rs, "CURDEF")
-        cur_def.text = "USD"
+        cur_def.text = self.currency
 
         # Create BANKACCTFROM element
         bank_acct_from = etree.SubElement(stmt_rs, "BANKACCTFROM")
         bank_id = etree.SubElement(bank_acct_from, "BANKID")
-        bank_id.text = "000000000"
+        bank_id.text = self.fi_id or "000000000"
         acct_id = etree.SubElement(bank_acct_from, "ACCTID")
-        acct_id.text = "000000000000"
+        acct_id.text = self.account_id or "000000000000"
         acct_type = etree.SubElement(bank_acct_from, "ACCTTYPE")
-        acct_type.text = "CHECKING"
+        acct_type.text = self.account_type
 
         # Create BANKTRANLIST element
         bank_tran_list = etree.SubElement(stmt_rs, "BANKTRANLIST")
@@ -154,6 +234,9 @@ class OFXGenerator:
         # Add transactions
         for transaction in transactions:
             self._add_transaction_to_list(bank_tran_list, transaction)
+
+        # Add balance information
+        self._add_balance_sections(stmt_rs)
 
     def _add_transaction_to_list(
         self,
@@ -177,6 +260,11 @@ class OFXGenerator:
         if "date" in transaction:
             dt_posted.text = self._format_ofx_date(transaction["date"])
 
+        # Add user date (same as posted date)
+        dt_user = etree.SubElement(stmt_trn, "DTUSER")
+        if "date" in transaction:
+            dt_user.text = self._format_ofx_date(transaction["date"])
+
         # Add transaction amount
         trn_amt = etree.SubElement(stmt_trn, "TRNAMT")
         if "amount" in transaction:
@@ -195,8 +283,32 @@ class OFXGenerator:
 
         # Add memo/description
         if "description" in transaction:
-            memo = etree.SubElement(stmt_trn, "MEMO")
-            memo.text = self._sanitize_text(transaction["description"])
+            name = etree.SubElement(stmt_trn, "NAME")
+            name.text = self._sanitize_text(transaction["description"])
+
+    def _add_balance_sections(self, stmt_rs: etree.Element) -> None:
+        """Add balance sections to OFX document.
+        
+        Args:
+            stmt_rs: STMTRS element
+        """
+        current_time = datetime.now().strftime("%Y%m%d%H%M%S")
+        
+        # Add LEDGERBAL if provided
+        if self.ledger_balance is not None:
+            ledger_bal = etree.SubElement(stmt_rs, "LEDGERBAL")
+            bal_amt = etree.SubElement(ledger_bal, "BALAMT")
+            bal_amt.text = f"{self.ledger_balance:.2f}"
+            dt_asof = etree.SubElement(ledger_bal, "DTASOF")
+            dt_asof.text = current_time
+        
+        # Add AVAILBAL if provided
+        if self.available_balance is not None:
+            avail_bal = etree.SubElement(stmt_rs, "AVAILBAL")
+            bal_amt = etree.SubElement(avail_bal, "BALAMT")
+            bal_amt.text = f"{self.available_balance:.2f}"
+            dt_asof = etree.SubElement(avail_bal, "DTASOF")
+            dt_asof.text = current_time
 
     def _determine_transaction_type(self, transaction: Dict[str, str]) -> str:
         """Determine OFX transaction type from transaction data.
@@ -269,13 +381,13 @@ class OFXGenerator:
             return f"{clean_amount}.00"
 
     def _format_ofx_date(self, date_str: str) -> str:
-        """Format date string for OFX format (YYYYMMDD).
+        """Format date string for OFX format (YYYYMMDDHHMMSS).
         
         Args:
             date_str: Date string in various formats
             
         Returns:
-            OFX formatted date string
+            OFX formatted date string with time
         """
         # Try various date formats
         date_formats = [
@@ -291,7 +403,7 @@ class OFXGenerator:
         for fmt in date_formats:
             try:
                 dt = datetime.strptime(date_str.strip(), fmt)
-                return dt.strftime("%Y%m%d")
+                return dt.strftime("%Y%m%d%H%M%S")
             except ValueError:
                 continue
 

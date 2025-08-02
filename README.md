@@ -1,14 +1,16 @@
 # file2ofx
 
-A Python CLI application that automatically converts transaction files (TXT/CSV) to OFX (Open Financial Exchange) format.
+Convert transaction files (TXT/CSV) to OFX format with auto-column detection.
 
 ## Features
 
-- **Auto-column detection**: Automatically identifies transaction columns from headers or data analysis
-- **Multiple input formats**: Supports TXT and CSV files
-- **Column mapping**: Uses `.cols` files for custom column definitions when headers are missing
-- **OFX compliance**: Generates standard OFX 2.x compliant output files
-- **Smart file naming**: Automatically handles output file naming with conflict resolution
+- **Auto-column detection**: Automatically identifies date, amount, description, and type columns
+- **Multiple file formats**: Supports CSV and TXT files with various delimiters
+- **Column definition files**: Use `.cols` files to specify headers for files without them
+- **OFX compliance**: Generates OFX 1.0.2+ compliant output files
+- **Smart file naming**: Handles output file conflicts with numbered suffixes
+- **Tab completion**: Full tab completion support for file and output paths
+- **Financial institution configuration**: Set bank details, account info, and balances
 
 ## Installation
 
@@ -20,22 +22,50 @@ pip install file2ofx
 
 ### Basic Usage
 
+Convert a CSV file to OFX:
 ```bash
 file2ofx transactions.csv
 ```
 
-This will create `transactions.ofx` in the same directory.
-
-### With Options
-
+Convert with verbose output:
 ```bash
-file2ofx bankfile.txt --format csv --encoding utf-8
+file2ofx transactions.csv --verbose
 ```
 
-### Help
+### Advanced Options
 
+Specify file format and encoding:
 ```bash
-file2ofx --help
+file2ofx transactions.txt --format txt --encoding utf-8
+```
+
+Set output file:
+```bash
+file2ofx transactions.csv --output my_transactions.ofx
+```
+
+### OFX Configuration Options
+
+Set OFX version:
+```bash
+file2ofx transactions.csv --ofx-version 102
+```
+
+Configure financial institution details:
+```bash
+file2ofx transactions.csv \
+  --fi-org "INVESTEC PRIVATE BANK" \
+  --fi-id "580105" \
+  --account-id "1100407033542" \
+  --account-type SAVINGS \
+  --currency ZAR
+```
+
+Set balance information:
+```bash
+file2ofx transactions.csv \
+  --ledger-balance 14863.32 \
+  --available-balance 14863.32
 ```
 
 ### Tab Completion
@@ -68,154 +98,35 @@ file2ofx completion > ~/.local/share/bash-completion/completions/file2ofx
 ## Input File Formats
 
 ### CSV Files
-- Standard CSV format with headers
-- Automatic column detection from headers
-- Supports quoted and unquoted values
+- Comma-separated values
+- Auto-detected delimiters
+- Support for quoted fields
+- Header row detection
 
 ### TXT Files
-- Fixed-width or delimited text files
-- Column detection through data analysis
-- Can use `.cols` companion files for column definitions
+- Fixed-width or delimited
+- Auto-detected delimiters
+- Support for `.cols` files for header specification
 
 ### Column Definition Files (.cols)
-When a text file has no headers, you can create a companion `.cols` file:
-
+If your transaction file doesn't have headers, create a `.cols` file with the same name:
 ```
 "Date","Description","Amount","Type"
 ```
 
-This file should contain comma-separated column names (quoted or unquoted).
-
 ## Output
 
-- **File naming**: Input filename with `.ofx` extension
-- **Conflict resolution**: If output exists, creates `filename_1.ofx`, `filename_2.ofx`, etc.
-- **OFX format**: Standard OFX 2.x compliant XML structure
-
-## Column Auto-Detection
-
-The application can automatically identify common transaction columns:
-
-- **Date columns**: Various date formats (MM/DD/YYYY, YYYY-MM-DD, etc.)
-- **Amount columns**: Numeric values with currency symbols
-- **Description columns**: Text fields containing transaction descriptions
-- **Type columns**: Transaction types (DEBIT, CREDIT, etc.)
+The tool generates OFX-compliant files with:
+- Proper OFX structure and formatting (SGML format)
+- Transaction details (date, amount, description, type)
+- Financial institution information (when provided)
+- Balance information (when provided)
+- Support for multiple OFX versions (1.0.2 through 2.2.0)
 
 ## Development
 
-### Setup
-
-1. **Clone the repository**:
-   ```bash
-   git clone <repository>
-   cd file2ofx
-   ```
-
-2. **Create and activate virtual environment**:
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
-
-3. **Install production dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Install development dependencies**:
-   ```bash
-   pip install -r requirements-dev.txt
-   ```
-
-5. **Install package in editable mode**:
-   ```bash
-   pip install -e .
-   ```
-
-### Development Dependencies
-
-The following tools are available for development:
-
-- **pytest**: Unit and integration testing
-- **pytest-cov**: Test coverage reporting
-- **ruff**: Code linting and formatting
-- **pre-commit**: Git hooks for code quality
-
-### Testing
-
-Run all tests:
-```bash
-pytest tests/
-```
-
-Run tests with coverage:
-```bash
-pytest tests/ --cov=file2ofx --cov-report=term-missing
-```
-
-### Linting and Formatting
-
-Check code quality:
-```bash
-ruff check .
-```
-
-Format code:
-```bash
-ruff format .
-```
-
-Fix auto-fixable issues:
-```bash
-ruff check . --fix
-```
-
-### Git Hooks
-
-Install pre-commit hooks:
-```bash
-pre-commit install
-```
-
-The repository includes:
-- **pre-commit hook**: Runs ruff linting before commits
-- **pre-push hook**: Runs tests before pushing to remote
-
-### Test Data Generation
-
-Generate sample test files:
-```bash
-python scripts/generate_test_data.py
-```
-
-This creates various test files in the `test_data/` directory for testing different scenarios.
-
-### Building and Distribution
-
-Build the package:
-```bash
-python -m build
-```
-
-The project uses `pyproject.toml` for configuration and supports modern Python packaging standards.
+For development setup, testing, and contributing guidelines, see [docs/DEVELOPER.md](docs/DEVELOPER.md).
 
 ## License
 
-MIT License - see LICENSE file for details.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Run linting and tests
-6. Submit a pull request
-
-## Changelog
-
-### 1.0.0
-- Initial release
-- Basic CSV/TXT to OFX conversion
-- Auto-column detection
-- Column definition file support 
+This project is licensed under the MIT License - see the LICENSE file for details. 
