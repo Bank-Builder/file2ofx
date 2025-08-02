@@ -206,7 +206,9 @@ def create_temp_file(prefix: str = "temp", suffix: str = "", directory: Path = N
         
     Note:
         Files created with this function will be automatically ignored by git
-        due to the _.* pattern in .gitignore
+        due to the _.* pattern in .gitignore. The naming convention is
+        _.filename.ext (underscore + dot + filename + extension) to avoid
+        conflicts with system dunder files like __pycache__.
     """
     if directory is None:
         directory = Path(tempfile.gettempdir())
