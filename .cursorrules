@@ -39,11 +39,29 @@ file2ofx/
 - Implement proper error handling and logging
 - Use environment variables for configuration
 
-## Git Workflow
+## Git Workflow & Shorthand Commands
 - Commit frequently between changes
 - Only push when instructed
 - Use meaningful commit messages
 - Test code before committing
+
+### Shorthand Commands
+- `+` = `git add .`
+- `++` = `git add . && git commit`
+- `\\\` = `pytest`
+- `push` = `git push`
+- `.` = continue
+
+### Commit Message Requirements
+- Keep commit messages short and to the point
+- Use imperative mood (e.g., "Add feature" not "Added feature")
+- Maximum 50 characters for the subject line
+- Focus on what the change does, not how it was done
+
+### Rollback Safety
+- **ALWAYS commit before making changes** to ensure rollback is possible
+- Make small, focused commits rather than large changes
+- Test code before committing to avoid breaking commits
 
 ## Testing
 - Write unit tests for all modules
