@@ -1,11 +1,13 @@
 """Tests for file utility functions."""
 
+import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
 from file2ofx.utils.file_utils import (
+    create_temp_file,
     detect_file_format,
     get_output_filename,
     read_cols_file,
@@ -194,3 +196,32 @@ class TestValidateFilePath:
 
         with pytest.raises(ValueError, match="Unsafe file path"):
             validate_file_path(test_file)
+
+
+class TestCreateTempFile:
+    """Test temporary file creation."""
+
+    def test_create_temp_file_basic(self, tmp_path):
+        """Test basic temporary file creation."""
+        temp_file = create_temp_file("test", ".txt", tmp_path)
+        
+        assert temp_file.name.startswith("_test")
+        assert temp_file.suffix == ".txt"
+        assert temp_file.exists()
+        assert temp_file.parent == tmp_path
+
+    def test_create_temp_file_defaults(self):
+        """Test temporary file creation with defaults."""
+        temp_file = create_temp_file()
+        
+        assert temp_file.name.startswith("_temp")
+        assert temp_file.exists()
+        assert temp_file.parent == Path(tempfile.gettempdir())
+
+    def test_create_temp_file_custom_prefix_suffix(self, tmp_path):
+        """Test temporary file creation with custom prefix and suffix."""
+        temp_file = create_temp_file("custom", ".csv", tmp_path)
+        
+        assert temp_file.name == "_custom.csv"
+        assert temp_file.exists()
+        assert temp_file.parent == tmp_path

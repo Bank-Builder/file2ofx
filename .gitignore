@@ -185,6 +185,7 @@ Desktop.ini
 !test_*.csv
 !requirements*.txt
 
-# Temporary files
+# Temporary files (use _.filename.ext naming convention)
 *.tmp
-*.temp 
+*.temp
+_.* 

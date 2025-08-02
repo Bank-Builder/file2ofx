@@ -9,7 +9,7 @@ description = "Convert transaction files (TXT/CSV) to OFX format with auto-colum
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Your Name", email = "your.email@example.com"},
+    {name = "Andrew Turpin", email = "andrew@turpin.co.za"},
 ]
 keywords = ["ofx", "finance", "banking", "transactions", "csv", "converter"]
 classifiers = [

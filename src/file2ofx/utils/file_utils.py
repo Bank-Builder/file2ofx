@@ -1,5 +1,6 @@
 """File utility functions for file2ofx."""
 
+import tempfile
 from pathlib import Path
 from typing import List
 
@@ -190,3 +191,31 @@ def validate_file_path(file_path: Path) -> None:
 
     if not file_path.stat().st_size > 0:
         raise ValueError(f"File is empty: {file_path}")
+
+
+def create_temp_file(prefix: str = "temp", suffix: str = "", directory: Path = None) -> Path:
+    """Create a temporary file with the _.filename.ext naming convention.
+    
+    Args:
+        prefix: File name prefix (default: "temp")
+        suffix: File extension (default: "")
+        directory: Directory to create file in (default: system temp directory)
+        
+    Returns:
+        Path to created temporary file
+        
+    Note:
+        Files created with this function will be automatically ignored by git
+        due to the _.* pattern in .gitignore
+    """
+    if directory is None:
+        directory = Path(tempfile.gettempdir())
+    
+    # Create filename with _ prefix
+    filename = f"_{prefix}{suffix}"
+    temp_file = directory / filename
+    
+    # Create the file
+    temp_file.touch()
+    
+    return temp_file
