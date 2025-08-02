@@ -1,8 +1,9 @@
 """CLI entry point for file2ofx."""
 
+import os
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import click
 
@@ -11,8 +12,130 @@ from .core.parser import FileParser
 from .utils.file_utils import get_output_filename
 
 
-@click.command()
-@click.argument("file", type=click.Path(exists=True, path_type=Path))
+def complete_file_path(ctx: click.Context, param: click.Parameter, incomplete: str) -> List[str]:
+    """Complete file paths for input files (CSV, TXT)."""
+    if not incomplete:
+        incomplete = "."
+    
+    try:
+        # Handle relative paths
+        if incomplete.startswith("./"):
+            incomplete = incomplete[2:]
+        elif incomplete.startswith("/"):
+            # Absolute path
+            path = Path(incomplete)
+        else:
+            # Relative path
+            path = Path.cwd() / incomplete
+        
+        # If incomplete ends with /, look in that directory
+        if incomplete.endswith("/"):
+            base_path = path
+            incomplete_name = ""
+        else:
+            # Otherwise, look in the parent directory
+            base_path = path.parent
+            incomplete_name = path.name
+        
+        if not base_path.exists():
+            return []
+        
+        completions = []
+        for item in base_path.iterdir():
+            if item.is_file():
+                # Only suggest CSV and TXT files
+                if item.suffix.lower() in [".csv", ".txt"]:
+                    if incomplete.endswith("/"):
+                        # If we're in a directory, show relative to current
+                        try:
+                            rel_path = item.relative_to(Path.cwd())
+                            completions.append(str(rel_path))
+                        except ValueError:
+                            # If not relative, use absolute
+                            completions.append(str(item))
+                    else:
+                        # If we're completing a filename, show matching names
+                        if item.name.startswith(incomplete_name):
+                            try:
+                                rel_path = item.relative_to(Path.cwd())
+                                completions.append(str(rel_path))
+                            except ValueError:
+                                # If not relative, use absolute
+                                completions.append(str(item))
+        
+        return completions
+    except Exception:
+        return []
+
+
+def complete_output_path(ctx: click.Context, param: click.Parameter, incomplete: str) -> List[str]:
+    """Complete output file paths (suggest .ofx extension)."""
+    if not incomplete:
+        incomplete = "."
+    
+    try:
+        # Handle relative paths
+        if incomplete.startswith("./"):
+            incomplete = incomplete[2:]
+        elif incomplete.startswith("/"):
+            # Absolute path
+            path = Path(incomplete)
+        else:
+            # Relative path
+            path = Path.cwd() / incomplete
+        
+        # If incomplete ends with /, look in that directory
+        if incomplete.endswith("/"):
+            base_path = path
+            incomplete_name = ""
+        else:
+            # Otherwise, look in the parent directory
+            base_path = path.parent
+            incomplete_name = path.name
+        
+        if not base_path.exists():
+            return []
+        
+        completions = []
+        for item in base_path.iterdir():
+            if item.is_file():
+                # Suggest .ofx files or directories
+                if item.suffix.lower() == ".ofx" or item.is_dir():
+                    if incomplete.endswith("/"):
+                        # If we're in a directory, show relative to current
+                        try:
+                            rel_path = item.relative_to(Path.cwd())
+                            completions.append(str(rel_path))
+                        except ValueError:
+                            # If not relative, use absolute
+                            completions.append(str(item))
+                    else:
+                        # If we're completing a filename, show matching names
+                        if item.name.startswith(incomplete_name):
+                            try:
+                                rel_path = item.relative_to(Path.cwd())
+                                completions.append(str(rel_path))
+                            except ValueError:
+                                # If not relative, use absolute
+                                completions.append(str(item))
+        
+        # Also suggest creating new .ofx files
+        if not incomplete.endswith("/"):
+            completions.append(f"{incomplete}.ofx")
+        
+        return completions
+    except Exception:
+        return []
+
+
+@click.group()
+def cli() -> None:
+    """Convert transaction files to OFX format."""
+    pass
+
+
+@cli.command()
+@click.argument("file", type=click.Path(exists=True, path_type=Path), shell_complete=complete_file_path)
 @click.option(
     "--format",
     "-f",
@@ -30,6 +153,7 @@ from .utils.file_utils import get_output_filename
     "--output",
     "-o",
     type=click.Path(path_type=Path),
+    shell_complete=complete_output_path,
     help="Output file path (default: input filename with .ofx extension)",
 )
 @click.option(
@@ -38,7 +162,7 @@ from .utils.file_utils import get_output_filename
     is_flag=True,
     help="Enable verbose output",
 )
-def main(
+def convert(
     file: Path,
     format: str,
     encoding: str,
@@ -74,6 +198,29 @@ def main(
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
+
+
+@cli.command()
+def completion() -> None:
+    """Generate shell completion script."""
+    click.echo("To enable tab completion, add this to your shell configuration:")
+    click.echo()
+    click.echo("For bash:")
+    click.echo("  eval \"$(_FILE2OFX_COMPLETE=bash_source file2ofx)\"")
+    click.echo()
+    click.echo("For zsh:")
+    click.echo("  eval \"$(_FILE2OFX_COMPLETE=zsh_source file2ofx)\"")
+    click.echo()
+    click.echo("For fish:")
+    click.echo("  eval \"$(_FILE2OFX_COMPLETE=fish_source file2ofx)\"")
+    click.echo()
+    click.echo("Or install the completion script:")
+    click.echo("  file2ofx completion > ~/.local/share/bash-completion/completions/file2ofx")
+
+
+def main() -> None:
+    """Main entry point."""
+    cli()
 
 
 if __name__ == "__main__":
