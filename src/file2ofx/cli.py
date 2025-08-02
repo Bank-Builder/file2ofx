@@ -128,13 +128,7 @@ def complete_output_path(ctx: click.Context, param: click.Parameter, incomplete:
         return []
 
 
-@click.group()
-def cli() -> None:
-    """Convert transaction files to OFX format."""
-    pass
-
-
-@cli.command()
+@click.command()
 @click.argument("file", type=click.Path(exists=True, path_type=Path), shell_complete=complete_file_path)
 @click.option(
     "--format",
@@ -162,7 +156,7 @@ def cli() -> None:
     is_flag=True,
     help="Enable verbose output",
 )
-def convert(
+def main(
     file: Path,
     format: str,
     encoding: str,
@@ -198,29 +192,6 @@ def convert(
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
-
-
-@cli.command()
-def completion() -> None:
-    """Generate shell completion script."""
-    click.echo("To enable tab completion, add this to your shell configuration:")
-    click.echo()
-    click.echo("For bash:")
-    click.echo("  eval \"$(_FILE2OFX_COMPLETE=bash_source file2ofx)\"")
-    click.echo()
-    click.echo("For zsh:")
-    click.echo("  eval \"$(_FILE2OFX_COMPLETE=zsh_source file2ofx)\"")
-    click.echo()
-    click.echo("For fish:")
-    click.echo("  eval \"$(_FILE2OFX_COMPLETE=fish_source file2ofx)\"")
-    click.echo()
-    click.echo("Or install the completion script:")
-    click.echo("  file2ofx completion > ~/.local/share/bash-completion/completions/file2ofx")
-
-
-def main() -> None:
-    """Main entry point."""
-    cli()
 
 
 if __name__ == "__main__":

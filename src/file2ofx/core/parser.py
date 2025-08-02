@@ -62,28 +62,44 @@ class FileParser:
             List of transaction dictionaries
         """
         try:
-            # Read CSV file
-            df = pd.read_csv(file_path, encoding=encoding)
-
+            # Read CSV file with header detection
+            df = pd.read_csv(file_path, encoding=encoding, header=None)
+            
             if df.empty:
                 raise ValueError("CSV file is empty")
-
+            
+            # Find the row with actual headers (skip empty rows)
+            header_row = None
+            for i, row in df.iterrows():
+                if not row.isna().all() and any('date' in str(cell).lower() or 'transaction' in str(cell).lower() for cell in row):
+                    header_row = i
+                    break
+            
+            if header_row is None:
+                raise ValueError("Could not find header row in CSV file")
+            
+            # Read CSV again with the correct header row
+            df = pd.read_csv(file_path, encoding=encoding, header=header_row)
+            
+            if df.empty:
+                raise ValueError("CSV file is empty after header detection")
+            
             # Detect columns from headers
             detected_columns = self.detector.detect_from_headers(df.columns.tolist())
-
+            
             # If headers didn't provide enough info, analyze data
             if len(detected_columns) < 3:
                 data_detected = self.detector.detect_from_data(df)
                 detected_columns.update(data_detected)
-
+            
             # Validate detected columns
             is_valid, missing = self.detector.validate_detected_columns(detected_columns)
             if not is_valid:
                 raise ValueError(f"Missing required columns: {missing}")
-
+            
             # Convert to transaction list
             return self._dataframe_to_transactions(df, detected_columns)
-
+            
         except Exception as e:
             raise ValueError(f"Error parsing CSV file: {e}")
 
