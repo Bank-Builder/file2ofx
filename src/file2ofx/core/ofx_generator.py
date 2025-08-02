@@ -275,7 +275,8 @@ class OFXGenerator:
             # Use the non-zero amount
             if debit_float > 0:
                 amount = self._normalize_amount(debit_amount)
-                trn_amt.text = amount
+                # Make debit amounts negative for OFX format
+                trn_amt.text = f"-{amount}"
             elif credit_float > 0:
                 amount = self._normalize_amount(credit_amount)
                 trn_amt.text = amount
