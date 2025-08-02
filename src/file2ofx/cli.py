@@ -1,6 +1,5 @@
 """CLI entry point for file2ofx."""
 
-import os
 import sys
 from pathlib import Path
 from typing import List, Optional
@@ -12,11 +11,13 @@ from .core.parser import FileParser
 from .utils.file_utils import get_output_filename
 
 
-def complete_file_path(ctx: click.Context, param: click.Parameter, incomplete: str) -> List[str]:
+def complete_file_path(
+    ctx: click.Context, param: click.Parameter, incomplete: str
+) -> List[str]:
     """Complete file paths for input files (CSV, TXT)."""
     if not incomplete:
         incomplete = "."
-    
+
     try:
         # Handle relative paths
         if incomplete.startswith("./"):
@@ -27,7 +28,7 @@ def complete_file_path(ctx: click.Context, param: click.Parameter, incomplete: s
         else:
             # Relative path
             path = Path.cwd() / incomplete
-        
+
         # If incomplete ends with /, look in that directory
         if incomplete.endswith("/"):
             base_path = path
@@ -36,10 +37,10 @@ def complete_file_path(ctx: click.Context, param: click.Parameter, incomplete: s
             # Otherwise, look in the parent directory
             base_path = path.parent
             incomplete_name = path.name
-        
+
         if not base_path.exists():
             return []
-        
+
         completions = []
         for item in base_path.iterdir():
             if item.is_file():
@@ -62,17 +63,19 @@ def complete_file_path(ctx: click.Context, param: click.Parameter, incomplete: s
                             except ValueError:
                                 # If not relative, use absolute
                                 completions.append(str(item))
-        
+
         return completions
     except Exception:
         return []
 
 
-def complete_output_path(ctx: click.Context, param: click.Parameter, incomplete: str) -> List[str]:
+def complete_output_path(
+    ctx: click.Context, param: click.Parameter, incomplete: str
+) -> List[str]:
     """Complete output file paths (suggest .ofx extension)."""
     if not incomplete:
         incomplete = "."
-    
+
     try:
         # Handle relative paths
         if incomplete.startswith("./"):
@@ -83,7 +86,7 @@ def complete_output_path(ctx: click.Context, param: click.Parameter, incomplete:
         else:
             # Relative path
             path = Path.cwd() / incomplete
-        
+
         # If incomplete ends with /, look in that directory
         if incomplete.endswith("/"):
             base_path = path
@@ -92,10 +95,10 @@ def complete_output_path(ctx: click.Context, param: click.Parameter, incomplete:
             # Otherwise, look in the parent directory
             base_path = path.parent
             incomplete_name = path.name
-        
+
         if not base_path.exists():
             return []
-        
+
         completions = []
         for item in base_path.iterdir():
             if item.is_file():
@@ -118,18 +121,22 @@ def complete_output_path(ctx: click.Context, param: click.Parameter, incomplete:
                             except ValueError:
                                 # If not relative, use absolute
                                 completions.append(str(item))
-        
+
         # Also suggest creating new .ofx files
         if not incomplete.endswith("/"):
             completions.append(f"{incomplete}.ofx")
-        
+
         return completions
     except Exception:
         return []
 
 
 @click.command()
-@click.argument("file", type=click.Path(exists=True, path_type=Path), shell_complete=complete_file_path)
+@click.argument(
+    "file",
+    type=click.Path(exists=True, path_type=Path),
+    shell_complete=complete_file_path,
+)
 @click.option(
     "--format",
     "-f",
@@ -185,7 +192,6 @@ def complete_output_path(ctx: click.Context, param: click.Parameter, incomplete:
     default="USD",
     help="Currency code (default: USD)",
 )
-
 def main(
     file: Path,
     format: str,
@@ -200,7 +206,7 @@ def main(
     currency: str,
 ) -> None:
     """Convert transaction files to OFX format.
-    
+
     FILE: Input file path (CSV or TXT)
     """
     try:
@@ -222,7 +228,7 @@ def main(
         # Generate OFX file
         generator = OFXGenerator()
         generator.generate_ofx(
-            transactions, 
+            transactions,
             output,
             ofx_version=ofx_version,
             fi_org=fi_org,

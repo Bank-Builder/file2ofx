@@ -2,7 +2,6 @@
 
 
 import pytest
-
 from file2ofx.core.ofx_generator import OFXGenerator
 from file2ofx.core.parser import FileParser
 from file2ofx.utils.file_utils import get_output_filename
@@ -144,7 +143,7 @@ class TestIntegration:
         # Transactions missing required fields
         invalid_transactions = [
             {"date": "2023-01-01"},  # Missing amount and description
-            {"amount": "100.00"},    # Missing date and description
+            {"amount": "100.00"},  # Missing date and description
         ]
 
         # Should still work as long as some transactions have required fields

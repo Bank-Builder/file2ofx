@@ -7,13 +7,13 @@ from typing import List
 
 def get_output_filename(input_file: Path) -> Path:
     """Generate output filename based on input file.
-    
+
     Args:
         input_file: Path to input file
-        
+
     Returns:
         Path to output file with .ofx extension
-        
+
     Raises:
         ValueError: If input file has no stem
     """
@@ -32,10 +32,10 @@ def get_output_filename(input_file: Path) -> Path:
 
 def _generate_unique_filename(base_file: Path) -> Path:
     """Generate unique filename by appending number suffix.
-    
+
     Args:
         base_file: Base file path
-        
+
     Returns:
         Path with unique filename
     """
@@ -56,13 +56,13 @@ def _generate_unique_filename(base_file: Path) -> Path:
 
 def read_cols_file(input_file: Path) -> List[str]:
     """Read column definitions from .cols file.
-    
+
     Args:
         input_file: Path to input file
-        
+
     Returns:
         List of column names
-        
+
     Raises:
         FileNotFoundError: If .cols file doesn't exist
         ValueError: If .cols file is malformed
@@ -85,15 +85,15 @@ def read_cols_file(input_file: Path) -> List[str]:
         return columns
 
     except Exception as e:
-        raise ValueError(f"Error reading .cols file: {e}")
+        raise ValueError(f"Error reading .cols file: {e}") from e
 
 
 def _parse_csv_line(line: str) -> List[str]:
     """Parse a single CSV line, handling quoted values.
-    
+
     Args:
         line: CSV line to parse
-        
+
     Returns:
         List of parsed values
     """
@@ -123,10 +123,10 @@ def _parse_csv_line(line: str) -> List[str]:
 
 def detect_file_format(file_path: Path) -> str:
     """Detect file format based on extension and content.
-    
+
     Args:
         file_path: Path to file
-        
+
     Returns:
         Detected format ('csv' or 'txt')
     """
@@ -155,10 +155,10 @@ def detect_file_format(file_path: Path) -> str:
 
 def validate_file_path(file_path: Path) -> None:
     """Validate file path for security and accessibility.
-    
+
     Args:
         file_path: Path to validate
-        
+
     Raises:
         ValueError: If path is invalid or unsafe
     """
@@ -193,17 +193,19 @@ def validate_file_path(file_path: Path) -> None:
         raise ValueError(f"File is empty: {file_path}")
 
 
-def create_temp_file(prefix: str = "temp", suffix: str = "", directory: Path = None) -> Path:
+def create_temp_file(
+    prefix: str = "temp", suffix: str = "", directory: Path = None
+) -> Path:
     """Create a temporary file with the _.filename.ext naming convention.
-    
+
     Args:
         prefix: File name prefix (default: "temp")
         suffix: File extension (default: "")
         directory: Directory to create file in (default: system temp directory)
-        
+
     Returns:
         Path to created temporary file
-        
+
     Note:
         Files created with this function will be automatically ignored by git
         due to the _.* pattern in .gitignore. The naming convention is
@@ -212,12 +214,12 @@ def create_temp_file(prefix: str = "temp", suffix: str = "", directory: Path = N
     """
     if directory is None:
         directory = Path(tempfile.gettempdir())
-    
+
     # Create filename with _. prefix (underscore + dot + filename)
     filename = f"_.{prefix}{suffix}"
     temp_file = directory / filename
-    
+
     # Create the file
     temp_file.touch()
-    
+
     return temp_file

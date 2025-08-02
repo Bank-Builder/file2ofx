@@ -2,13 +2,12 @@
 """Generate test data for file2ofx project."""
 
 import csv
-from datetime import datetime
 from pathlib import Path
 
 
 def generate_csv_test_data(output_dir: Path) -> None:
     """Generate CSV test data files.
-    
+
     Args:
         output_dir: Directory to save test files
     """
@@ -24,7 +23,6 @@ def generate_csv_test_data(output_dir: Path) -> None:
         writer.writerow(["Date", "Description", "Amount", "Type"])
 
         # Generate sample transactions
-        base_date = datetime(2023, 1, 1)
         transactions = [
             ["2023-01-01", "Grocery store purchase", "125.50", "debit"],
             ["2023-01-02", "ATM withdrawal", "200.00", "debit"],
@@ -66,7 +64,7 @@ def generate_csv_test_data(output_dir: Path) -> None:
 
 def generate_txt_test_data(output_dir: Path) -> None:
     """Generate TXT test data files.
-    
+
     Args:
         output_dir: Directory to save test files
     """
@@ -120,7 +118,7 @@ def generate_txt_test_data(output_dir: Path) -> None:
 
 def generate_malformed_test_data(output_dir: Path) -> None:
     """Generate malformed test data for error testing.
-    
+
     Args:
         output_dir: Directory to save test files
     """

@@ -23,15 +23,15 @@ class FileParser:
         encoding: str = "utf-8",
     ) -> List[Dict[str, str]]:
         """Parse a transaction file and return structured data.
-        
+
         Args:
             file_path: Path to input file
             format: File format ('auto', 'csv', 'txt')
             encoding: File encoding
-            
+
         Returns:
             List of transaction dictionaries
-            
+
         Raises:
             FileNotFoundError: If file doesn't exist
             ValueError: If file format is invalid or parsing fails
@@ -53,63 +53,68 @@ class FileParser:
 
     def _parse_csv_file(self, file_path: Path, encoding: str) -> List[Dict[str, str]]:
         """Parse CSV file with column detection.
-        
+
         Args:
             file_path: Path to CSV file
             encoding: File encoding
-            
+
         Returns:
             List of transaction dictionaries
         """
         try:
             # Read CSV file with header detection
             df = pd.read_csv(file_path, encoding=encoding, header=None)
-            
+
             if df.empty:
                 raise ValueError("CSV file is empty")
-            
+
             # Find the row with actual headers (skip empty rows)
             header_row = None
             for i, row in df.iterrows():
-                if not row.isna().all() and any('date' in str(cell).lower() or 'transaction' in str(cell).lower() for cell in row):
+                if not row.isna().all() and any(
+                    "date" in str(cell).lower() or "transaction" in str(cell).lower()
+                    for cell in row
+                ):
                     header_row = i
                     break
-            
+
             if header_row is None:
                 raise ValueError("Could not find header row in CSV file")
-            
+
             # Read CSV again with the correct header row
             df = pd.read_csv(file_path, encoding=encoding, header=header_row)
-            
+
             if df.empty:
                 raise ValueError("CSV file is empty after header detection")
-            
+
             # Detect columns from headers
             detected_columns = self.detector.detect_from_headers(df.columns.tolist())
-            
+
             # If headers didn't provide enough info, analyze data
             if len(detected_columns) < 3:
                 data_detected = self.detector.detect_from_data(df)
                 detected_columns.update(data_detected)
-            
+
             # Validate detected columns
-            is_valid, missing = self.detector.validate_detected_columns(detected_columns)
+            is_valid, missing = self.detector.validate_detected_columns(
+                detected_columns
+            )
             if not is_valid:
                 raise ValueError(f"Missing required columns: {missing}")
-            
+
             # Convert to transaction list
             return self._dataframe_to_transactions(df, detected_columns)
-            
+
         except Exception as e:
-            raise ValueError(f"Error parsing CSV file: {e}")
+            raise ValueError(f"Error parsing CSV file: {e}") from e
 
     def _parse_txt_file(self, file_path: Path, encoding: str) -> List[Dict[str, str]]:
         """Parse TXT file with column detection.
-        
+
         Args:
             file_path: Path to TXT file
             encoding: File encoding
-            
+
         Returns:
             List of transaction dictionaries
         """
@@ -123,7 +128,7 @@ class FileParser:
                 return self._parse_txt_auto_detect(file_path, encoding)
 
         except Exception as e:
-            raise ValueError(f"Error parsing TXT file: {e}")
+            raise ValueError(f"Error parsing TXT file: {e}") from e
 
     def _parse_txt_with_headers(
         self,
@@ -132,12 +137,12 @@ class FileParser:
         encoding: str,
     ) -> List[Dict[str, str]]:
         """Parse TXT file with provided column headers.
-        
+
         Args:
             file_path: Path to TXT file
             column_names: List of column names
             encoding: File encoding
-            
+
         Returns:
             List of transaction dictionaries
         """
@@ -157,7 +162,9 @@ class FileParser:
             detected_columns = self.detector.detect_from_headers(column_names)
 
             # Validate detected columns
-            is_valid, missing = self.detector.validate_detected_columns(detected_columns)
+            is_valid, missing = self.detector.validate_detected_columns(
+                detected_columns
+            )
             if not is_valid:
                 raise ValueError(f"Missing required columns: {missing}")
 
@@ -165,15 +172,17 @@ class FileParser:
             return self._dataframe_to_transactions(df, detected_columns)
 
         except Exception as e:
-            raise ValueError(f"Error parsing TXT file with headers: {e}")
+            raise ValueError(f"Error parsing TXT file with headers: {e}") from e
 
-    def _parse_txt_auto_detect(self, file_path: Path, encoding: str) -> List[Dict[str, str]]:
+    def _parse_txt_auto_detect(
+        self, file_path: Path, encoding: str
+    ) -> List[Dict[str, str]]:
         """Parse TXT file with automatic format detection.
-        
+
         Args:
             file_path: Path to TXT file
             encoding: File encoding
-            
+
         Returns:
             List of transaction dictionaries
         """
@@ -195,7 +204,9 @@ class FileParser:
                         detected_columns = self.detector.detect_from_data(df)
 
                         # Check if we have enough detected columns
-                        is_valid, missing = self.detector.validate_detected_columns(detected_columns)
+                        is_valid, missing = self.detector.validate_detected_columns(
+                            detected_columns
+                        )
                         if is_valid:
                             return self._dataframe_to_transactions(df, detected_columns)
 
@@ -206,15 +217,17 @@ class FileParser:
             return self._parse_fixed_width_txt(file_path, encoding)
 
         except Exception as e:
-            raise ValueError(f"Error parsing TXT file with auto-detection: {e}")
+            raise ValueError(f"Error parsing TXT file with auto-detection: {e}") from e
 
-    def _parse_fixed_width_txt(self, file_path: Path, encoding: str) -> List[Dict[str, str]]:
+    def _parse_fixed_width_txt(
+        self, file_path: Path, encoding: str
+    ) -> List[Dict[str, str]]:
         """Parse fixed-width TXT file.
-        
+
         Args:
             file_path: Path to TXT file
             encoding: File encoding
-            
+
         Returns:
             List of transaction dictionaries
         """
@@ -246,21 +259,23 @@ class FileParser:
                 detected_columns = self.detector.detect_from_data(df)
 
                 # Validate detected columns
-                is_valid, missing = self.detector.validate_detected_columns(detected_columns)
+                is_valid, missing = self.detector.validate_detected_columns(
+                    detected_columns
+                )
                 if is_valid:
                     return self._dataframe_to_transactions(df, detected_columns)
 
             raise ValueError("Could not detect required columns in fixed-width file")
 
         except Exception as e:
-            raise ValueError(f"Error parsing fixed-width TXT file: {e}")
+            raise ValueError(f"Error parsing fixed-width TXT file: {e}") from e
 
     def _detect_fixed_width_boundaries(self, lines: List[str]) -> List[Tuple[int, int]]:
         """Detect column boundaries in fixed-width text.
-        
+
         Args:
             lines: List of text lines
-            
+
         Returns:
             List of (start, end) column boundaries
         """
@@ -293,13 +308,15 @@ class FileParser:
 
         return boundaries
 
-    def _parse_fixed_width_line(self, line: str, boundaries: List[Tuple[int, int]]) -> Dict[str, str]:
+    def _parse_fixed_width_line(
+        self, line: str, boundaries: List[Tuple[int, int]]
+    ) -> Dict[str, str]:
         """Parse a single fixed-width line.
-        
+
         Args:
             line: Text line to parse
             boundaries: Column boundaries
-            
+
         Returns:
             Dictionary of column values
         """
@@ -319,11 +336,11 @@ class FileParser:
         detected_columns: Dict[str, str],
     ) -> List[Dict[str, str]]:
         """Convert DataFrame to list of transaction dictionaries.
-        
+
         Args:
             df: DataFrame with transaction data
             detected_columns: Dictionary mapping column names to types
-            
+
         Returns:
             List of transaction dictionaries
         """

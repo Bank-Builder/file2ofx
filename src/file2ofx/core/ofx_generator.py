@@ -32,7 +32,7 @@ class OFXGenerator:
         currency: str = "USD",
     ) -> None:
         """Generate OFX file from transaction data.
-        
+
         Args:
             transactions: List of transaction dictionaries
             output_path: Path to output OFX file
@@ -42,7 +42,7 @@ class OFXGenerator:
             account_id: Account ID
             account_type: Account type (default: "CHECKING")
             currency: Currency code (default: "USD")
-            
+
         Raises:
             ValueError: If transactions are invalid or generation fails
         """
@@ -68,11 +68,11 @@ class OFXGenerator:
             self._write_ofx_file(ofx_root, output_path)
 
         except Exception as e:
-            raise ValueError(f"Error generating OFX file: {e}")
+            raise ValueError(f"Error generating OFX file: {e}") from e
 
     def _create_ofx_structure(self) -> etree.Element:
         """Create the basic OFX document structure.
-        
+
         Returns:
             OFX root element
         """
@@ -122,39 +122,39 @@ class OFXGenerator:
 
     def _add_signon_section(self, ofx_root: etree.Element) -> None:
         """Add SIGNONMSGSRSV1 section to OFX document.
-        
+
         Args:
             ofx_root: OFX root element
         """
         # Create SIGNONMSGSRSV1 element
         signon_msgs = etree.SubElement(ofx_root, "SIGNONMSGSRSV1")
-        
+
         # Create SONRS element
         son_rs = etree.SubElement(signon_msgs, "SONRS")
-        
+
         # Add STATUS
         status = etree.SubElement(son_rs, "STATUS")
         code = etree.SubElement(status, "CODE")
         code.text = "0"
         severity = etree.SubElement(status, "SEVERITY")
         severity.text = "INFO"
-        
+
         # Add DTSERVER (current timestamp)
         dt_server = etree.SubElement(son_rs, "DTSERVER")
         dt_server.text = datetime.now().strftime("%Y%m%d%H%M%S")
-        
+
         # Add LANGUAGE
         language = etree.SubElement(son_rs, "LANGUAGE")
         language.text = "ENG"
-        
+
         # Add DTPROFUP (same as DTSERVER)
         dt_prof_up = etree.SubElement(son_rs, "DTPROFUP")
         dt_prof_up.text = dt_server.text
-        
+
         # Add DTACCTUP (same as DTSERVER)
         dt_acct_up = etree.SubElement(son_rs, "DTACCTUP")
         dt_acct_up.text = dt_server.text
-        
+
         # Add FI (Financial Institution) if provided
         if self.fi_org or self.fi_id:
             fi = etree.SubElement(son_rs, "FI")
@@ -171,7 +171,7 @@ class OFXGenerator:
         transactions: List[Dict[str, str]],
     ) -> None:
         """Add transactions to OFX document.
-        
+
         Args:
             ofx_root: OFX root element
             transactions: List of transaction dictionaries
@@ -223,7 +223,7 @@ class OFXGenerator:
             end_date = self._get_latest_date(transactions)
             dt_end.text = self._format_ofx_date(end_date)
 
-                    # Add transactions
+            # Add transactions
             for transaction in transactions:
                 self._add_transaction_to_list(bank_tran_list, transaction)
 
@@ -236,7 +236,7 @@ class OFXGenerator:
         transaction: Dict[str, str],
     ) -> None:
         """Add a single transaction to the OFX transaction list.
-        
+
         Args:
             bank_tran_list: BANKTRANLIST element
             transaction: Transaction dictionary
@@ -259,19 +259,19 @@ class OFXGenerator:
 
         # Add transaction amount
         trn_amt = etree.SubElement(stmt_trn, "TRNAMT")
-        
+
         # Handle separate debit and credit columns
         debit_amount = transaction.get("debit", "0")
         credit_amount = transaction.get("credit", "0")
-        
+
         # Clean and convert amounts
         debit_clean = re.sub(r"[$€£¥₹₽₿,]", "", debit_amount)
         credit_clean = re.sub(r"[$€£¥₹₽₿,]", "", credit_amount)
-        
+
         try:
             debit_float = float(debit_clean) if debit_clean else 0.0
             credit_float = float(credit_clean) if credit_clean else 0.0
-            
+
             # Use the non-zero amount
             if debit_float > 0:
                 amount = self._normalize_amount(debit_amount)
@@ -298,20 +298,20 @@ class OFXGenerator:
         fit_id = etree.SubElement(stmt_trn, "FITID")
         # Generate a proper transaction ID (8 digits like the working file)
         import hashlib
-        
+
         # Get the amount for ID generation
         amount_for_id = "0"
         debit_amount = transaction.get("debit", "0")
         credit_amount = transaction.get("credit", "0")
-        
+
         # Clean and convert amounts
         debit_clean = re.sub(r"[$€£¥₹₽₿,]", "", debit_amount)
         credit_clean = re.sub(r"[$€£¥₹₽₿,]", "", credit_amount)
-        
+
         try:
             debit_float = float(debit_clean) if debit_clean else 0.0
             credit_float = float(credit_clean) if credit_clean else 0.0
-            
+
             # Use the non-zero amount
             if debit_float > 0:
                 amount_for_id = debit_amount
@@ -322,7 +322,7 @@ class OFXGenerator:
         except ValueError:
             if "amount" in transaction:
                 amount_for_id = transaction["amount"]
-        
+
         if "date" in transaction:
             # Create a hash-based ID similar to the working file format
             content = f"{transaction['date']}_{amount_for_id}"
@@ -342,7 +342,7 @@ class OFXGenerator:
 
     def _add_balance_sections(self, stmt_rs: etree.Element) -> None:
         """Add balance sections to OFX document.
-        
+
         Args:
             stmt_rs: STMTRS element
         """
@@ -360,14 +360,12 @@ class OFXGenerator:
         dt_asof = etree.SubElement(avail_bal, "DTASOF")
         dt_asof.text = datetime.now().strftime("%Y%m%d%H%M%S")
 
-
-
     def _determine_transaction_type(self, transaction: Dict[str, str]) -> str:
         """Determine OFX transaction type from transaction data.
-        
+
         Args:
             transaction: Transaction dictionary
-            
+
         Returns:
             OFX transaction type
         """
@@ -395,15 +393,15 @@ class OFXGenerator:
         # Check for separate debit and credit columns
         debit_amount = transaction.get("debit", "0")
         credit_amount = transaction.get("credit", "0")
-        
+
         # Clean and convert amounts
         debit_clean = re.sub(r"[$€£¥₹₽₿,]", "", debit_amount)
         credit_clean = re.sub(r"[$€£¥₹₽₿,]", "", credit_amount)
-        
+
         try:
             debit_float = float(debit_clean) if debit_clean else 0.0
             credit_float = float(credit_clean) if credit_clean else 0.0
-            
+
             # If debit amount is greater than 0, it's a DEBIT
             if debit_float > 0:
                 return "DEBIT"
@@ -432,10 +430,10 @@ class OFXGenerator:
 
     def _normalize_amount(self, amount: str) -> str:
         """Normalize amount string for OFX format.
-        
+
         Args:
             amount: Amount string
-            
+
         Returns:
             Normalized amount string
         """
@@ -455,10 +453,10 @@ class OFXGenerator:
 
     def _format_ofx_date(self, date_str: str) -> str:
         """Format date string for OFX format (YYYYMMDDHHMMSS).
-        
+
         Args:
             date_str: Date string in various formats
-            
+
         Returns:
             OFX formatted date string with time (default 12:00:00)
         """
@@ -486,10 +484,10 @@ class OFXGenerator:
 
     def _get_earliest_date(self, transactions: List[Dict[str, str]]) -> str:
         """Get the earliest date from transactions.
-        
+
         Args:
             transactions: List of transaction dictionaries
-            
+
         Returns:
             Earliest date string
         """
@@ -519,10 +517,10 @@ class OFXGenerator:
 
     def _get_latest_date(self, transactions: List[Dict[str, str]]) -> str:
         """Get the latest date from transactions.
-        
+
         Args:
             transactions: List of transaction dictionaries
-            
+
         Returns:
             Latest date string
         """
@@ -552,10 +550,10 @@ class OFXGenerator:
 
     def _parse_date(self, date_str: str) -> Optional[datetime]:
         """Parse date string to datetime object.
-        
+
         Args:
             date_str: Date string
-            
+
         Returns:
             Parsed datetime or None
         """
@@ -579,10 +577,10 @@ class OFXGenerator:
 
     def _sanitize_text(self, text: str) -> str:
         """Sanitize text for OFX format.
-        
+
         Args:
             text: Text to sanitize
-            
+
         Returns:
             Sanitized text
         """
@@ -601,13 +599,13 @@ class OFXGenerator:
 
     def _write_ofx_file(self, ofx_root: etree.Element, output_path: Path) -> None:
         """Write OFX file in SGML format (not XML).
-        
+
         Args:
             ofx_root: OFX root element
             output_path: Path to output file
         """
         try:
-            with open(output_path, 'w', encoding='utf-8') as f:
+            with open(output_path, "w", encoding="utf-8") as f:
                 # Write SGML header (not XML)
                 f.write("OFXHEADER:100\n")
                 f.write("DATA:OFXSGML\n")
@@ -618,30 +616,40 @@ class OFXGenerator:
                 f.write("COMPRESSION:NONE\n")
                 f.write("OLDFILEUID:NONE\n")
                 f.write("NEWFILEUID:NONE\n\n")
-                
+
                 # Write SGML content without closing tags
                 f.write("<OFX>\n")
                 self._write_sgml_element(f, ofx_root, indent=1)
                 f.write("</OFX>\n")
-                
+
         except Exception as e:
-            raise ValueError(f"Error writing OFX file: {e}")
+            raise ValueError(f"Error writing OFX file: {e}") from e
 
     def _write_sgml_element(self, f, element, indent=0):
         """Write SGML element without closing tags.
-        
+
         Args:
             f: File object
             element: XML element
             indent: Indentation level
         """
         spaces = "  " * indent  # Use 2-space indentation like working example
-        
+
         for child in element:
-            if child.tag in ["OFXHEADER", "DATA", "VERSION", "SECURITY", "ENCODING", "CHARSET", "COMPRESSION", "OLDFILEUID", "NEWFILEUID"]:
+            if child.tag in [
+                "OFXHEADER",
+                "DATA",
+                "VERSION",
+                "SECURITY",
+                "ENCODING",
+                "CHARSET",
+                "COMPRESSION",
+                "OLDFILEUID",
+                "NEWFILEUID",
+            ]:
                 # Skip these as they're handled in the header
                 continue
-                
+
             if child.text and child.text.strip():
                 f.write(f"{spaces}<{child.tag}>{child.text}\n")
             else:

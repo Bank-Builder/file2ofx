@@ -71,10 +71,10 @@ class ColumnDetector:
 
     def detect_from_headers(self, headers: List[str]) -> Dict[str, str]:
         """Detect column types from header names.
-        
+
         Args:
             headers: List of column header names
-            
+
         Returns:
             Dictionary mapping column names to detected types
         """
@@ -118,10 +118,10 @@ class ColumnDetector:
 
     def detect_from_data(self, df: pd.DataFrame) -> Dict[str, str]:
         """Detect column types by analyzing data content.
-        
+
         Args:
             df: DataFrame to analyze
-            
+
         Returns:
             Dictionary mapping column names to detected types
         """
@@ -142,10 +142,10 @@ class ColumnDetector:
 
     def _analyze_column_data(self, series: pd.Series) -> Optional[str]:
         """Analyze a single column's data to determine its type.
-        
+
         Args:
             series: Pandas Series to analyze
-            
+
         Returns:
             Detected column type or None
         """
@@ -175,10 +175,10 @@ class ColumnDetector:
 
     def _is_date_column(self, series: pd.Series) -> bool:
         """Check if column contains date data.
-        
+
         Args:
             series: Series to check
-            
+
         Returns:
             True if column appears to contain dates
         """
@@ -197,16 +197,13 @@ class ColumnDetector:
 
     def _is_date_value(self, value: str) -> bool:
         """Check if a value looks like a date.
-        
+
         Args:
             value: String value to check
-            
+
         Returns:
             True if value appears to be a date
         """
-        # Remove common separators and try to parse
-        cleaned = re.sub(r"[-/]", "", value.strip())
-
         # Check for common date patterns
         date_patterns = [
             r"\d{8}",  # YYYYMMDD
@@ -232,10 +229,10 @@ class ColumnDetector:
 
     def _is_amount_column(self, series: pd.Series) -> bool:
         """Check if column contains amount data.
-        
+
         Args:
             series: Series to check
-            
+
         Returns:
             True if column appears to contain amounts
         """
@@ -254,10 +251,10 @@ class ColumnDetector:
 
     def _is_amount_value(self, value: str) -> bool:
         """Check if a value looks like an amount.
-        
+
         Args:
             value: String value to check
-            
+
         Returns:
             True if value appears to be an amount
         """
@@ -279,10 +276,10 @@ class ColumnDetector:
 
     def _is_description_column(self, series: pd.Series) -> bool:
         """Check if column contains description data.
-        
+
         Args:
             series: Series to check
-            
+
         Returns:
             True if column appears to contain descriptions
         """
@@ -301,10 +298,10 @@ class ColumnDetector:
 
     def _is_description_value(self, value: str) -> bool:
         """Check if a value looks like a description.
-        
+
         Args:
             value: String value to check
-            
+
         Returns:
             True if value appears to be a description
         """
@@ -317,17 +314,19 @@ class ColumnDetector:
             return False
 
         # Descriptions usually have mixed case and some punctuation
-        has_mixed_case = any(c.isupper() for c in value) and any(c.islower() for c in value)
+        has_mixed_case = any(c.isupper() for c in value) and any(
+            c.islower() for c in value
+        )
         has_punctuation = any(c in ".,!?;:" for c in value)
 
         return has_mixed_case or has_punctuation
 
     def _is_type_column(self, series: pd.Series) -> bool:
         """Check if column contains transaction type data.
-        
+
         Args:
             series: Series to check
-            
+
         Returns:
             True if column appears to contain transaction types
         """
@@ -336,9 +335,21 @@ class ColumnDetector:
 
         # Check for common transaction type values
         type_values = {
-            "debit", "credit", "deposit", "withdrawal", "transfer",
-            "payment", "purchase", "refund", "fee", "interest",
-            "atm", "check", "ach", "wire", "pos"
+            "debit",
+            "credit",
+            "deposit",
+            "withdrawal",
+            "transfer",
+            "payment",
+            "purchase",
+            "refund",
+            "fee",
+            "interest",
+            "atm",
+            "check",
+            "ach",
+            "wire",
+            "pos",
         }
 
         type_count = 0
@@ -353,11 +364,11 @@ class ColumnDetector:
 
     def _matches_patterns(self, text: str, patterns: List[str]) -> bool:
         """Check if text matches any of the given patterns.
-        
+
         Args:
             text: Text to check
             patterns: List of regex patterns
-            
+
         Returns:
             True if text matches any pattern
         """
@@ -368,18 +379,20 @@ class ColumnDetector:
 
     def get_required_columns(self) -> List[str]:
         """Get list of required column types for OFX generation.
-        
+
         Returns:
             List of required column types
         """
         return ["date", "description"]
 
-    def validate_detected_columns(self, detected: Dict[str, str]) -> Tuple[bool, List[str]]:
+    def validate_detected_columns(
+        self, detected: Dict[str, str]
+    ) -> Tuple[bool, List[str]]:
         """Validate that required columns are detected.
-        
+
         Args:
             detected: Dictionary of detected column types
-            
+
         Returns:
             Tuple of (is_valid, missing_columns)
         """
@@ -387,7 +400,7 @@ class ColumnDetector:
         detected_types = set(detected.values())
 
         missing = [col for col in required if col not in detected_types]
-        
+
         # Check that we have either separate debit/credit columns or a single amount column
         has_debit = "debit" in detected_types
         has_credit = "credit" in detected_types
