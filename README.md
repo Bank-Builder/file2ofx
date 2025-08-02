@@ -78,26 +78,99 @@ The application can automatically identify common transaction columns:
 
 ### Setup
 
-```bash
-git clone <repository>
-cd file2ofx
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-pip install -e .
-```
+1. **Clone the repository**:
+   ```bash
+   git clone <repository>
+   cd file2ofx
+   ```
+
+2. **Create and activate virtual environment**:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
+
+3. **Install production dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Install development dependencies**:
+   ```bash
+   pip install -r requirements-dev.txt
+   ```
+
+5. **Install package in editable mode**:
+   ```bash
+   pip install -e .
+   ```
+
+### Development Dependencies
+
+The following tools are available for development:
+
+- **pytest**: Unit and integration testing
+- **pytest-cov**: Test coverage reporting
+- **ruff**: Code linting and formatting
+- **pre-commit**: Git hooks for code quality
 
 ### Testing
 
+Run all tests:
 ```bash
 pytest tests/
 ```
 
-### Linting
+Run tests with coverage:
+```bash
+pytest tests/ --cov=file2ofx --cov-report=term-missing
+```
 
+### Linting and Formatting
+
+Check code quality:
 ```bash
 ruff check .
+```
+
+Format code:
+```bash
 ruff format .
 ```
+
+Fix auto-fixable issues:
+```bash
+ruff check . --fix
+```
+
+### Git Hooks
+
+Install pre-commit hooks:
+```bash
+pre-commit install
+```
+
+The repository includes:
+- **pre-commit hook**: Runs ruff linting before commits
+- **pre-push hook**: Runs tests before pushing to remote
+
+### Test Data Generation
+
+Generate sample test files:
+```bash
+python scripts/generate_test_data.py
+```
+
+This creates various test files in the `test_data/` directory for testing different scenarios.
+
+### Building and Distribution
+
+Build the package:
+```bash
+python -m build
+```
+
+The project uses `pyproject.toml` for configuration and supports modern Python packaging standards.
 
 ## License
 

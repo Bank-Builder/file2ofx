@@ -183,6 +183,7 @@ Desktop.ini
 !example_*.csv
 !test_*.txt
 !test_*.csv
+!requirements*.txt
 
 # Temporary files
 *.tmp
