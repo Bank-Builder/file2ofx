@@ -113,7 +113,7 @@ class TestIntegration:
         # Try to parse invalid file
         parser = FileParser()
 
-        with pytest.raises(ValueError, match="Missing required columns"):
+        with pytest.raises(ValueError, match="Could not find header row in CSV file"):
             parser.parse_file(invalid_file, format="csv")
 
     def test_error_handling_empty_file(self, tmp_path):
