@@ -211,8 +211,8 @@ def create_temp_file(prefix: str = "temp", suffix: str = "", directory: Path = N
     if directory is None:
         directory = Path(tempfile.gettempdir())
     
-    # Create filename with _ prefix
-    filename = f"_{prefix}{suffix}"
+    # Create filename with _. prefix (underscore + dot + filename)
+    filename = f"_.{prefix}{suffix}"
     temp_file = directory / filename
     
     # Create the file

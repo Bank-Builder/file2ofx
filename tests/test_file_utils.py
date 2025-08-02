@@ -205,7 +205,7 @@ class TestCreateTempFile:
         """Test basic temporary file creation."""
         temp_file = create_temp_file("test", ".txt", tmp_path)
         
-        assert temp_file.name.startswith("_test")
+        assert temp_file.name.startswith("_.test")
         assert temp_file.suffix == ".txt"
         assert temp_file.exists()
         assert temp_file.parent == tmp_path
@@ -214,7 +214,7 @@ class TestCreateTempFile:
         """Test temporary file creation with defaults."""
         temp_file = create_temp_file()
         
-        assert temp_file.name.startswith("_temp")
+        assert temp_file.name.startswith("_.temp")
         assert temp_file.exists()
         assert temp_file.parent == Path(tempfile.gettempdir())
 
@@ -222,6 +222,6 @@ class TestCreateTempFile:
         """Test temporary file creation with custom prefix and suffix."""
         temp_file = create_temp_file("custom", ".csv", tmp_path)
         
-        assert temp_file.name == "_custom.csv"
+        assert temp_file.name == "_.custom.csv"
         assert temp_file.exists()
         assert temp_file.parent == tmp_path
