@@ -432,7 +432,7 @@ class OFXGenerator:
             date_str: Date string in various formats
             
         Returns:
-            OFX formatted date string with time
+            OFX formatted date string with time (default 12:00:00)
         """
         # Try various date formats
         date_formats = [
@@ -448,12 +448,13 @@ class OFXGenerator:
         for fmt in date_formats:
             try:
                 dt = datetime.strptime(date_str.strip(), fmt)
-                return dt.strftime("%Y%m%d%H%M%S")
+                # Use 12:00:00 as default time (like the working example)
+                return dt.strftime("%Y%m%d120000")
             except ValueError:
                 continue
 
-        # If no format works, return original
-        return date_str
+        # If no format works, return original with default time
+        return f"{date_str}120000"
 
     def _get_earliest_date(self, transactions: List[Dict[str, str]]) -> str:
         """Get the earliest date from transactions.
